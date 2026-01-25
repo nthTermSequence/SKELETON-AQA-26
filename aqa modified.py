@@ -43,7 +43,7 @@ def Main():
             NumberOfStages = int(input("Enter number of stages to advance by: "))
             ThisSimulation.AdvanceStage(NumberOfStages)
             print(f"Simulation moved on {NumberOfStages} stages" + "\n")
-        elif Choice == "6": ###
+        elif Choice == "6": #Removes food from all nests - Remove if needed
             for N in ThisSimulation._Nests:
                 N.ChangeFood(-1000000)
     input()
@@ -269,7 +269,7 @@ class Simulation():
                     A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                print(len(self._Ants), N._FoodLevel)#####
+##                print(len(self._Ants), N._FoodLevel) #shows remaining ants and food in nest
 
 class Entity():
     def __init__(self, StartRow, StartColumn):
@@ -493,3 +493,4 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
