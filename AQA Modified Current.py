@@ -422,7 +422,7 @@ class Nest(Entity):
     def GetFoodLevel(self):
         return self._FoodLevel
 
-## start of change around line 421 -----------------------------
+## start of change ~line 421 -----------------------------
 
     def AdvanceStage(self, Nests, Ants, Pheromones):
         if Ants is None:
@@ -436,14 +436,15 @@ class Nest(Entity):
                 else:
                     Count += 2
         self.ChangeFood(-int(Count))
-        if self._FoodLevel == 0 and len(Ants) > 0:
+        NestAnts = [A for A in Ants where self.IsAntInNest(A)]
+        if self._FoodLevel == 0 and len(NestAnts) > 0:
             AntsToCull += 1
-        if self._FoodLevel < len(Ants): 
+        if self._FoodLevel < len(NestAnts): 
             AntsToCull += 1
-        if self._FoodLevel < len(Ants) * 5:
+        if self._FoodLevel < len(NestAnts) * 5:
             AntsToCull += 1
-            if AntsToCull > len(Ants):
-                AntsToCull = len(Ants)
+            if AntsToCull > len(NestAnts):
+                AntsToCull = len(NestAnts)
             random.shuffle(Ants)
             Pos = 0
             while AntsToCull > 0 and len(Ants) > Pos:
@@ -470,6 +471,7 @@ class Nest(Entity):
         
 ## end of change -----------------------------------------------
 
+
 class Pheromone(Entity):
     def __init__(self, Row, Column, BelongsToAnt, InitialStrength, Decay):
         super().__init__(Row, Column)
@@ -493,4 +495,5 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
