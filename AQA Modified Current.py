@@ -436,7 +436,7 @@ class Nest(Entity):
                 else:
                     Count += 2
         self.ChangeFood(-int(Count))
-        NestAnts = [A for A in Ants where self.IsAntInNest(A)]
+        NestAnts = [A for A in Ants if self.IsAntInNest(A)]
         if self._FoodLevel == 0 and len(NestAnts) > 0:
             AntsToCull += 1
         if self._FoodLevel < len(NestAnts): 
@@ -495,5 +495,6 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
 
