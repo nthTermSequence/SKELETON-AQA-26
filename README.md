@@ -8,7 +8,7 @@ Changes to the original file should be delimited as such:
 START OF CHANGE ~line n
 
  ## code, preferably shown in context
- ## of the whole function
+ ## of the whole function or class
 
 END OF CHANGE
 
