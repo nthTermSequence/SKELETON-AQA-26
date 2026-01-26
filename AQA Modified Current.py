@@ -255,7 +255,7 @@ class Simulation():
             PheromonesToDelete = []
             for P in self._Pheromones:
                 P.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                if P.GetStrength() == self._KillPheremoneStrength: ##
+                if P.GetStrength() >= self._KillPheremoneStrength: ##
                     PheromonesToDelete.append(P)
             for P in PheromonesToDelete:
                 self._Pheromones.remove(P)
@@ -432,7 +432,7 @@ class Nest(Entity):
     def GetFoodLevel(self):
         return self._FoodLevel
 
-## start of change ~line 421 -----------------------------
+## START OF CHANGE ~line 421
 
     def AdvanceStage(self, Nests, Ants, Pheromones):
         if Ants is None:
@@ -479,7 +479,7 @@ class Nest(Entity):
     def IsAntInNest(self, Ant):
         return (Ant.GetNestRow() == self._Row and Ant.GetNestColumn() == self._Column)
         
-## end of change -----------------------------------------------
+## END OF CHANGE
 
 
 class Pheromone(Entity):
@@ -488,10 +488,10 @@ class Pheromone(Entity):
         self._BelongsTo = BelongsToAnt
         self._Strength = InitialStrength
         self._PheromoneDecay = Decay
-
+    
     def AdvanceStage(self, Nests, Ants, Pheromones):
         self._Strength -= self._PheromoneDecay
-        if self._Strength < 0:
+        if self._Strength > :
             self._Strength = 0
 
     def UpdateStrength(self, Change):
@@ -505,6 +505,7 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
 
 
