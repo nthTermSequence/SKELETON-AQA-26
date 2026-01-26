@@ -70,6 +70,8 @@ def GetCellReference():
     print()
     return Row, Column
 
+## START OF CHANGE ~line 73
+
 class Simulation():
     def __init__(self, SimulationParameters):
         self._StartingNumberOfNests = SimulationParameters[0]
@@ -78,12 +80,16 @@ class Simulation():
         self._StartingFoodInNest = SimulationParameters[3]
         self._StartingNumberOfFoodCells = SimulationParameters[4]
         self._StartingAntsInNest = SimulationParameters[5]
-        self._NewPheromoneStrength = SimulationParameters[6]
-        self._PheromoneDecay = SimulationParameters[7]
+        self._NewPheromoneStrength = 0 ##
+        self._KillPheremoneStrength = SimulationParameters[6] ##
+        self._PheromoneDecay = -SimulationParameters[7] ##
         self._Nests = []
         self._Ants = []
         self._Pheromones = []
         self._Grid = []
+
+## END OF CHANGE
+        
         Row = 0
         Column = 0
         for Row in range(1, self._NumberOfRows + 1):
@@ -242,15 +248,20 @@ class Simulation():
             Details += "\n\n"
         return Details
 
+## START OF CHANGE ~line 246
+    
     def AdvanceStage(self, NumberOfStages):
         for Count in range(1, NumberOfStages + 1):
             PheromonesToDelete = []
             for P in self._Pheromones:
                 P.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                if P.GetStrength() == 0:
+                if P.GetStrength() == self._KillPheremoneStrength: ##
                     PheromonesToDelete.append(P)
             for P in PheromonesToDelete:
                 self._Pheromones.remove(P)
+
+## END OF CHANGE
+            
             for A in self._Ants:
                 A.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
                 CurrentCell = self._Grid[self.__GetIndex(A.GetRow(), A.GetColumn())]
@@ -269,7 +280,6 @@ class Simulation():
                     A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-##                print(len(self._Ants), N._FoodLevel) #shows remaining ants and food in nest
 
 class Entity():
     def __init__(self, StartRow, StartColumn):
@@ -495,6 +505,7 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
 
 
