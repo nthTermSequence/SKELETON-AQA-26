@@ -9,13 +9,13 @@ def Main():
     SimulationParameters = []
     SimNo = input("Enter simulation number: ")
     if SimNo == "1":
-        SimulationParameters = [1, 5, 5, 500, 3, 5, 1000, 50]
+        SimulationParameters = [1, 5, 5, 500, 1, 10, 1000, 50] ###
     elif SimNo == "2":
         SimulationParameters = [1, 5, 5, 500, 3, 5, 1000, 100]
     elif SimNo == "3":
         SimulationParameters = [1, 10, 10, 500, 3, 9, 1000, 25]
     elif SimNo == "4":
-        SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25] ###
+        SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25] 
     ThisSimulation = Simulation(SimulationParameters)
     Choice = ""
     while Choice != "9":
@@ -143,25 +143,28 @@ class Simulation():
     def __GetIndexOfNeighbourWithStrongestPheromone(self, Row, Column, Ant):
         StrongestPheromone = 0
         IndexOfStrongestPheromone = -1
+        ChoiceList = []
         for Index in self.__GetIndicesOfNeighbours(Row, Column):
             if Index != -1:
                 if self.GetStrongestPheromoneInCell(self._Grid[Index]) > StrongestPheromone:
-                    ChoiceList = []
+                    ChoiceList = [Index]
                     IndexOfStrongestPheromone = Index
                     StrongestPheromone = self.GetStrongestPheromoneInCell(self._Grid[Index])
+                elif self.GetStrongestPheromoneInCell(self._Grid[Index]) == StrongestPheromone:
                     ChoiceList.append(Index)
-                elif self.GetStrongestPheromoneInCell(self._Grid[Index]) = StrongestPheromone:
-                    choiceList.append(Index)
-        if len(ChoiceList) > 1:
+        if len(ChoiceList) > 1 and StrongestPheromone > 0:
+            
+            print(ChoiceList, type(ChoiceList))
+
+            print(self.GetDetails())
             HomeNest = (Ant._NestRow,Ant._NestColumn)
-            d = {}
+            GreatestDistance = -1 ##Ants always move 1 unit (Chebyshev distance) therefore the strongest, furthest pheremone is the most recent and in the correct direction
+            random.shuffle(ChoiceList)
             for Index in ChoiceList:
-                d[Index] = self._ChebyshevDistance(HomeNest, self._GetCoordinatesFromIndex(Index))
-            D = -1
-            for key, item in random.shuffle(d.items())
-                if item > D:
-                    D = item
-                    IndexOfStrongestPheromone = key
+                NestRadius = self._ChebyshevDistance(HomeNest, self._GetCoordinatesFromIndex(Index))
+                if NestRadius > GreatestDistance:
+                    GreatestDistance = NestRadius
+                    IndexOfStrongestPheromone = Index
         return IndexOfStrongestPheromone
 
     def _GetCoordinatesFromIndex(self, Index):  
@@ -169,8 +172,8 @@ class Simulation():
         Row = (Index - Column + 1) / self._NumberOfColumns + 1
         return (int(Row), int(Column))
 
-    def _ChebyshevDistance(a, b): ## takes values in as a tuplpe (x, y) or some such
-    return max(abs(b[0] - a[0]), abs(b[1] - a[1]))
+    def _ChebyshevDistance(a, b): ## takes values in as a tuple (x, y) or some such
+        return max(abs(b[0] - a[0]), abs(b[1] - a[1]))
 
 ## END OF CHANGE
 
@@ -226,7 +229,7 @@ class Simulation():
                 AmountOfFood = TempCell.GetAmountOfFood()
                 if AmountOfFood > 0:
                     Details += f"| {AmountOfFood} food |  "
-                Details += "\n"
+            Details += "\n"
         return Details
 
     def GetAreaDetails(self, StartRow, StartColumn, EndRow, EndColumn):
@@ -304,7 +307,7 @@ class Simulation():
                 else:
                     if A.GetFoodCarried() > 0:
                         self.UpdateAntsPheromoneInCell(A)
-                    A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
+                    A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn(), A))
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
 
@@ -530,6 +533,8 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
+
 
 
 
