@@ -15,7 +15,14 @@ def Main():
     elif SimNo == "3":
         SimulationParameters = [1, 10, 10, 500, 3, 9, 1000, 25]
     elif SimNo == "4":
-        SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25] ###
+        SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25]
+    elif SimNo == "5":
+        SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 50],
+    ['', '', '', '', '',
+     '', 'Pheromone(BelongsToAnt: 2, Strength: 1000)', 'Queen(ID:1, BelongsToNest:1), Nest(ID: 1, FoodLevel: 400)', '', '',
+     '', '', '', 'Ant(ID:2, BelongsToNest:1, FoodLevel: 20)', 'Food(FoodLevel: 500)',
+     '', '', '', '', '',
+     '', '', '', '', ''])
     ThisSimulation = Simulation(SimulationParameters)
     Choice = ""
     while Choice != "9":
@@ -43,9 +50,9 @@ def Main():
             NumberOfStages = int(input("Enter number of stages to advance by: "))
             ThisSimulation.AdvanceStage(NumberOfStages)
             print(f"Simulation moved on {NumberOfStages} stages" + "\n")
-        elif Choice == "6": #Removes food from all nests - Remove if needed
-            for N in ThisSimulation._Nests:
-                N.ChangeFood(-1000000)
+        elif Choice == "6":
+            ThisSimulation.Customise()
+            print("Customisation complete!\n")
     input()
 
 def DisplayMenu():
@@ -70,50 +77,130 @@ def GetCellReference():
     print()
     return Row, Column
 
-## START OF CHANGE ~line 73
-
 class Simulation():
     def __init__(self, SimulationParameters):
-        self._StartingNumberOfNests = SimulationParameters[0]
-        self._NumberOfRows = SimulationParameters[1]
-        self._NumberOfColumns = SimulationParameters[2]
-        self._StartingFoodInNest = SimulationParameters[3]
-        self._StartingNumberOfFoodCells = SimulationParameters[4]
-        self._StartingAntsInNest = SimulationParameters[5]
-        self._NewPheromoneStrength = 0 ##
-        self._KillPheremoneStrength = SimulationParameters[6] ##
-        self._PheromoneDecay = -SimulationParameters[7] ##
-        self._Nests = []
-        self._Ants = []
-        self._Pheromones = []
-        self._Grid = []
+        if type(SimulationParameters) == list:
+            self._StartingNumberOfNests = SimulationParameters[0]
+            self._NumberOfRows = SimulationParameters[1]
+            self._NumberOfColumns = SimulationParameters[2]
+            self._StartingFoodInNest = SimulationParameters[3]
+            self._StartingNumberOfFoodCells = SimulationParameters[4]
+            self._StartingAntsInNest = SimulationParameters[5]
+            self._NewPheromoneStrength = SimulationParameters[6]
+            self._PheromoneDecay = SimulationParameters[7]
+            self._Nests = []
+            self._Ants = []
+            self._Pheromones = []
+            self._Grid = []
+            Row = 0
+            Column = 0
+            for Row in range(1, self._NumberOfRows + 1):
+                for Column in range(1, self._NumberOfColumns + 1):
+                    self._Grid.append(Cell(Row, Column))
+            self.SetUpANestAt(2, 4)
+            for Count in range(2, self._StartingNumberOfNests + 1):
+                Allowed = False
+                while Allowed == False:
+                    Allowed = True
+                    Row = random.randint(1, self._NumberOfRows)
+                    Column = random.randint(1, self._NumberOfColumns)
+                    for N in self._Nests:
+                        if N.GetRow() == Row and N.GetColumn() == Column:
+                            Allowed = False
+                self.SetUpANestAt(Row, Column)
+            for Count in range(1, self._StartingNumberOfFoodCells + 1):
+                Row = 2
+                Column = 4
+                while Row == 2 and Column == 4:
+                    Row = random.randint(1, self._NumberOfRows)
+                    Column = random.randint(1, self._NumberOfColumns)
+                self.AddFoodToCell(Row, Column, 500)
+        else:
+            self._StartingNumberOfNests = SimulationParameters[0]
+            self._NumberOfRows = SimulationParameters[0][1]
+            self._NumberOfColumns = SimulationParameters[0][2]
+            self._StartingFoodInNest = SimulationParameters[0][3]
+            self._StartingNumberOfFoodCells = SimulationParameters[0][4]
+            self._StartingAntsInNest = SimulationParameters[0][5]
+            self._NewPheromoneStrength = SimulationParameters[0][6]
+            self._PheromoneDecay = SimulationParameters[0][7]
+            self._Nests = []
+            self._Ants = []
+            self._Pheromones = []
+            self._Grid = []
+##            print(SimulationParameters)
+            for Row in range(1, self._NumberOfRows + 1):
+                for Column in range(1, self._NumberOfColumns + 1):
+                    self._Grid.append(Cell(Row, Column))
 
-## END OF CHANGE
-        
-        Row = 0
-        Column = 0
-        for Row in range(1, self._NumberOfRows + 1):
-            for Column in range(1, self._NumberOfColumns + 1):
-                self._Grid.append(Cell(Row, Column))
-        self.SetUpANestAt(2, 4)
-        for Count in range(2, self._StartingNumberOfNests + 1):
-            Allowed = False
-            while Allowed == False:
-                Allowed = True
-                Row = random.randint(1, self._NumberOfRows)
-                Column = random.randint(1, self._NumberOfColumns)
-                for N in self._Nests:
-                    if N.GetRow() == Row and N.GetColumn() == Column:
-                        Allowed = False
-            self.SetUpANestAt(Row, Column)
-        for Count in range(1, self._StartingNumberOfFoodCells + 1):
-            Row = 2
-            Column = 4
-            while Row == 2 and Column == 4:
-                Row = random.randint(1, self._NumberOfRows)
-                Column = random.randint(1, self._NumberOfColumns)
-            self.AddFoodToCell(Row, Column, 500)
+            
+            Entities = []
+            for CellNumber in range(len(SimulationParameters[1])):
+                Row, Column = self.__GetRowColumn(CellNumber)
+                CellContents = SimulationParameters[1][CellNumber]
+                Letter = 0
+                while Letter < len(CellContents):
+                    if CellContents[Letter].isalpha():
+                        Start = Letter
+                        while CellContents[Letter + 1].isalpha():
+                            Letter += 1
+                        Word = CellContents[Start:Letter + 1]
+                        if Word in ["Ant", "Queen", "Nest", "Food", "Pheromone"]:                            
+                            Entities.append([Word, {"Row": Row, "Column": Column}])
+                        else:
+                            Entities[-1][1].setdefault(Word)
+                    elif CellContents[Letter].isnumeric():
+                        Start = Letter
+                        while CellContents[Letter + 1].isnumeric():
+                            Letter += 1
+                        Entities[-1][1][Word] = int(CellContents[Start:Letter + 1])
+                    Letter += 1
+            print(Entities)
+            
+            for NewEntity in Entities:
+                match NewEntity[0]:
+                    case "Ant":
+                        AntNest = None
+                        for NestEntity in Entities:
+                            if NestEntity[0] == "Nest" and NestEntity[1]["ID"] == NewEntity[1]["BelongsToNest"]:
+                                AntNest = (NestEntity[1]["Row"], NestEntity[1]["Column"])
+                                break
+                        if AntNest:
+                            NewAnt = WorkerAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1])
+                            NewAnt.UpdateFoodCarried(NewEntity[1]["FoodLevel"])
+                            self._Ants.append(NewAnt)
+                        else:
+                            raise ReferenceError(f"WorkerAnt at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Nest")
 
+                    case "Queen":
+                        AntNest = None
+                        for NestEntity in Entities:
+                            if NestEntity[0] == "Nest" and NestEntity[1]["ID"] == NewEntity[1]["BelongsToNest"]:
+                                AntNest = (NestEntity[1]["Row"], NestEntity[1]["Column"])
+                                break
+                        if AntNest:
+                            NewAnt = QueenAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1])
+                            self._Ants.append(NewAnt)
+                        else:
+                            raise ReferenceError(f"QueenAnt at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Nest")
+ 
+                    case "Nest":
+                        self._Nests.append(Nest(NewEntity[1]["Row"], NewEntity[1]["Column"], NewEntity[1]["FoodLevel"]))
+ 
+                    case "Food":
+                        self._Grid[self.__GetIndex(NewEntity[1]["Row"], NewEntity[1]["Column"])].UpdateFoodInCell(NewEntity[1]["FoodLevel"])
+
+                    case "Pheromone":
+                        PheromoneAnt = None
+                        for AntEntity in Entities:
+                            if AntEntity[0] == "Ant" and AntEntity[1]["ID"] == NewEntity[1]["BelongsToAnt"]:
+                                PheromoneAnt = AntEntity[1]["ID"]
+                                break
+                        if PheromoneAnt:
+                            self._Pheromones.append(Pheromone(NewEntity[1]["Row"], NewEntity[1]["Column"], PheromoneAnt, NewEntity[1]["Strength"], self._PheromoneDecay))
+                        else:
+                            raise ReferenceError(f"Pheromone at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Ant")
+                
     def SetUpANestAt(self, Row, Column):
         self._Nests.append(Nest(Row, Column, self._StartingFoodInNest))
         self._Ants.append(QueenAnt(Row, Column, Row, Column))
@@ -125,6 +212,9 @@ class Simulation():
 
     def __GetIndex(self, Row, Column):
         return (Row - 1) * self._NumberOfColumns + Column - 1
+
+    def __GetRowColumn(self, Index):
+        return (Index // self._NumberOfRows + 1, Index % self._NumberOfColumns + 1)
 
     def __GetIndicesOfNeighbours(self, Row, Column):
         ListOfNeighbours = []
@@ -199,7 +289,7 @@ class Simulation():
                 AmountOfFood = TempCell.GetAmountOfFood()
                 if AmountOfFood > 0:
                     Details += f"| {AmountOfFood} food |  "
-                Details += "\n"
+            Details += "\n"
         return Details
 
     def GetAreaDetails(self, StartRow, StartColumn, EndRow, EndColumn):
@@ -248,20 +338,15 @@ class Simulation():
             Details += "\n\n"
         return Details
 
-## START OF CHANGE ~line 246
-    
     def AdvanceStage(self, NumberOfStages):
         for Count in range(1, NumberOfStages + 1):
             PheromonesToDelete = []
             for P in self._Pheromones:
                 P.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                if P.GetStrength() >= self._KillPheremoneStrength: ##
+                if P.GetStrength() == 0:
                     PheromonesToDelete.append(P)
             for P in PheromonesToDelete:
                 self._Pheromones.remove(P)
-
-## END OF CHANGE
-            
             for A in self._Ants:
                 A.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
                 CurrentCell = self._Grid[self.__GetIndex(A.GetRow(), A.GetColumn())]
@@ -280,6 +365,20 @@ class Simulation():
                     A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
+
+##    def Customise():
+##        Customisation = input("What do you want to add? An Ant (a), a Nest (n), a Pheromone (p) or Food (f)? ").lower()
+##        match Customisation:
+##            case "a":
+##                Type = input("Queen (q) or Worker (w)? ").lower()
+##                self._Ants.append(WorkerAnt(self._Row, self._Column, self._Row, self._Column))
+##
+##            case "n":
+##                pass
+##            case "p":
+##                pass
+##            case "f":
+##                pass
 
 class Entity():
     def __init__(self, StartRow, StartColumn):
@@ -432,39 +531,31 @@ class Nest(Entity):
     def GetFoodLevel(self):
         return self._FoodLevel
 
-## START OF CHANGE ~line 421
-
     def AdvanceStage(self, Nests, Ants, Pheromones):
         if Ants is None:
             return
         AntsToCull = 0
         Count = 0
         for A in Ants:
-            if self.IsAntInNest(A):
+            if A.GetNestRow() == self._Row and A.GetNestColumn() == self._Column:
                 if A.GetTypeOfAnt() == "queen":
                     Count += 10
                 else:
                     Count += 2
         self.ChangeFood(-int(Count))
-        NestAnts = [A for A in Ants if self.IsAntInNest(A)]
-        if self._FoodLevel == 0 and len(NestAnts) > 0:
+        if self._FoodLevel == 0 and len(Ants) > 0:
             AntsToCull += 1
-        if self._FoodLevel < len(NestAnts): 
+        if self._FoodLevel < len(Ants):
             AntsToCull += 1
-        if self._FoodLevel < len(NestAnts) * 5:
+        if self._FoodLevel < len(Ants) * 5:
             AntsToCull += 1
-            if AntsToCull > len(NestAnts):
-                AntsToCull = len(NestAnts)
-            random.shuffle(Ants)
-            Pos = 0
-            while AntsToCull > 0 and len(Ants) > Pos:
-                if self.IsAntInNest(Ants[Pos]):
-                    if Ants[Pos].GetTypeOfAnt() == "queen":
-                        self._NumberOfQueens -= 1
-                    Ants.pop(Pos)
-                    AntsToCull -= 1
-                else:
-                    Pos += 1
+            if AntsToCull > len(Ants):
+                AntsToCull = len(Ants)
+            for A in range(1, AntsToCull + 1):
+                RPos = random.randint(0, len(Ants) - 1)
+                if Ants[RPos].GetTypeOfAnt() == "queen":
+                    self._NumberOfQueens -= 1
+                Ants.pop(RPos)
         else:
             for A in range(1, self._NumberOfQueens + 1):
                 RNo1 = random.randint(0, 99)
@@ -476,22 +567,16 @@ class Nest(Entity):
                         Ants.append(WorkerAnt(self._Row, self._Column, self._Row, self._Column))
         return Nests, Ants, Pheromones
 
-    def IsAntInNest(self, Ant):
-        return (Ant.GetNestRow() == self._Row and Ant.GetNestColumn() == self._Column)
-        
-## END OF CHANGE
-
-
 class Pheromone(Entity):
     def __init__(self, Row, Column, BelongsToAnt, InitialStrength, Decay):
         super().__init__(Row, Column)
         self._BelongsTo = BelongsToAnt
         self._Strength = InitialStrength
         self._PheromoneDecay = Decay
-    
+
     def AdvanceStage(self, Nests, Ants, Pheromones):
         self._Strength -= self._PheromoneDecay
-        if self._Strength > :
+        if self._Strength < 0:
             self._Strength = 0
 
     def UpdateStrength(self, Change):
@@ -505,8 +590,3 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
-
-
-
-
-
