@@ -16,13 +16,19 @@ def Main():
         SimulationParameters = [1, 10, 10, 500, 3, 9, 1000, 25]
     elif SimNo == "4":
         SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25]
+        
+## START OF CHANGE ~line 19
+        
     elif SimNo == "5":
-        SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 50],
+        SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 
     ['', '', '', '', '',
-     '', 'Pheromone(BelongsToAnt: 2, Strength: 1000)', 'Queen(ID:1, BelongsToNest:1), Nest(ID: 1, FoodLevel: 400)', '', '',
-     '', '', '', 'Ant(ID:2, BelongsToNest:1, FoodLevel: 20)', 'Food(FoodLevel: 500)',
+     'Food(FoodLevel: 500)', 'Pheromone(BelongsToAnt: 2, Strength: 1000)', 'Pheromone(BelongsToAnt: 2, Strength: 950)', 'Pheromone(BelongsToAnt: 2, Strength: 900)', 'Nest(ID: 1, FoodLevel: 400), Ant(ID:2, BelongsToNest:1, FoodLevel: 20)',
      '', '', '', '', '',
-     '', '', '', '', ''])
+     '', '', '', '', '',
+     '', '', '', '', '']])
+                                
+## END OF CHANGE
+                                
     ThisSimulation = Simulation(SimulationParameters)
     Choice = ""
     while Choice != "9":
@@ -50,9 +56,6 @@ def Main():
             NumberOfStages = int(input("Enter number of stages to advance by: "))
             ThisSimulation.AdvanceStage(NumberOfStages)
             print(f"Simulation moved on {NumberOfStages} stages" + "\n")
-        elif Choice == "6":
-            ThisSimulation.Customise()
-            print("Customisation complete!\n")
     input()
 
 def DisplayMenu():
@@ -79,6 +82,9 @@ def GetCellReference():
 
 class Simulation():
     def __init__(self, SimulationParameters):
+
+## START OF CHANGE ~line 86
+
         if type(SimulationParameters) == list:
             self._StartingNumberOfNests = SimulationParameters[0]
             self._NumberOfRows = SimulationParameters[1]
@@ -128,7 +134,6 @@ class Simulation():
             self._Ants = []
             self._Pheromones = []
             self._Grid = []
-##            print(SimulationParameters)
             for Row in range(1, self._NumberOfRows + 1):
                 for Column in range(1, self._NumberOfColumns + 1):
                     self._Grid.append(Cell(Row, Column))
@@ -155,7 +160,6 @@ class Simulation():
                             Letter += 1
                         Entities[-1][1][Word] = int(CellContents[Start:Letter + 1])
                     Letter += 1
-            print(Entities)
             
             for NewEntity in Entities:
                 match NewEntity[0]:
@@ -200,7 +204,12 @@ class Simulation():
                             self._Pheromones.append(Pheromone(NewEntity[1]["Row"], NewEntity[1]["Column"], PheromoneAnt, NewEntity[1]["Strength"], self._PheromoneDecay))
                         else:
                             raise ReferenceError(f"Pheromone at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Ant")
-                
+
+    def __GetRowColumn(self, Index):
+        return (Index // self._NumberOfRows + 1, Index % self._NumberOfColumns + 1)
+
+## END OF CHANGE
+
     def SetUpANestAt(self, Row, Column):
         self._Nests.append(Nest(Row, Column, self._StartingFoodInNest))
         self._Ants.append(QueenAnt(Row, Column, Row, Column))
@@ -212,9 +221,6 @@ class Simulation():
 
     def __GetIndex(self, Row, Column):
         return (Row - 1) * self._NumberOfColumns + Column - 1
-
-    def __GetRowColumn(self, Index):
-        return (Index // self._NumberOfRows + 1, Index % self._NumberOfColumns + 1)
 
     def __GetIndicesOfNeighbours(self, Row, Column):
         ListOfNeighbours = []
@@ -365,20 +371,6 @@ class Simulation():
                     A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-
-##    def Customise():
-##        Customisation = input("What do you want to add? An Ant (a), a Nest (n), a Pheromone (p) or Food (f)? ").lower()
-##        match Customisation:
-##            case "a":
-##                Type = input("Queen (q) or Worker (w)? ").lower()
-##                self._Ants.append(WorkerAnt(self._Row, self._Column, self._Row, self._Column))
-##
-##            case "n":
-##                pass
-##            case "p":
-##                pass
-##            case "f":
-##                pass
 
 class Entity():
     def __init__(self, StartRow, StartColumn):
