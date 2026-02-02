@@ -58,23 +58,39 @@ class Button():
         self.coords = coords
         self.text = text
         self.colour = colour
-        self.clicked = False
+        self.clicked = True
+        self.WHITE_TEXT = cambria.render(self.text, True, "#ffffff")
+        self.BLACK_TEXT = cambria.render(self.text, True, "#000000")
+        self.TEXT_WIDTH = self.WHITE_TEXT.get_width()
+        self.TEXT_HEIGHT = self.WHITE_TEXT.get_height()
+        self.MARGIN = 10
+        self.RECT = pygame.rect.Rect(self.coords, (self.TEXT_WIDTH + 2 * self.MARGIN, self.TEXT_HEIGHT + 2 * self.MARGIN))
         Button.buttons.append(self)
         
 
     def Blit(self, screen):
-        margin = 10
-        rendered_text = cambria.render(self.text, True, "#ffffff" if self.clicked else "#000000")
-        pygame.draw.rect(screen, self.colour, (self.coords, (rendered_text.get_width() + 2 * margin, rendered_text.get_height() + 2 * margin)))
-        pygame.draw.rect(screen, AddScalar(self.colour, - 40), (self.coords, (rendered_text.get_width() + 2 * margin, rendered_text.get_height() + 2 * margin)), width=1)
-        screen.blit(rendered_text, AddScalar(self.coords, margin))
+        if self.clicked:
+            pygame.draw.rect(screen, AddScalar(self.colour, - 80), self.RECT)
+            pygame.draw.rect(screen, AddScalar(self.colour, - 120), self.RECT, width=1)
+            screen.blit(self.WHITE_TEXT, AddScalar(self.coords, self.MARGIN))
+        else:
+            pygame.draw.rect(screen, self.colour, self.RECT)
+            pygame.draw.rect(screen, AddScalar(self.colour, - 40), self.RECT, width=1)
+            screen.blit(self.BLACK_TEXT, AddScalar(self.coords, self.MARGIN))
         
     def Render(screen):
         for button in Button.buttons:
             button.Blit(screen)
+            
+    def Click(MouseCoords):
+        for button in Button.buttons:
+            button.Blit(screen)
 
-    def Click():
-        self.clicked = not self.clicked
+    def ClickCollision():
+        pass
+    def Click(self, clicked):
+        self.clicked = clicked
+        
 def Add(List1, List2):
     return [List1[i] + List2[i] for i in range(len(List1))]
 
@@ -104,10 +120,12 @@ while running:
 
 
     if pygame.mouse.get_pressed()[0]:
+        
         if MouseCoords == []:
             MouseCoords = pygame.mouse.get_pos()
             CameraCoords = Camera.GetCoords()
         Camera.SetCoords(Add(Divide(Subtract(MouseCoords, pygame.mouse.get_pos()), Camera.GetZoom()), CameraCoords))
+        
     else:
         MouseCoords = []
         
@@ -133,6 +151,7 @@ while running:
                 TempZoom = Camera.GetZoom()
                 Camera.Zoom(1.1 ** -4)
                 Camera.Pan(Subtract(Divide((screen.get_width() / 2, screen.get_height() / 2), TempZoom), Divide((screen.get_width() / 2, screen.get_height() / 2), Camera.GetZoom())))
+
 ##        print(Camera.GetCoords())
 
 
