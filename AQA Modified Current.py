@@ -1,512 +1,151 @@
-#Skeleton Program code for the AQA A Level Paper 1 Summer 2026 examination
-#this code should be used in conjunction with the Preliminary Material
-#written by the AQA Programmer Team
-#developed in the Python 3.9 programming environment
+import sys, math
+try:
+    import pygame
+    from pygame.locals import *
+    pygame.init()
+except:
+    print("Whoops!\n\nYou don't have pygame properly installed.\nFortunately, you can open Powershell (Windows Key + x), then type\n\npip uninstall pygame\n\nthen\n\nY\n\nand finally\n\npip install --force-reinstall pygame\n\nIf you're using a school computer, you might be concerned about the ability of a student to so easily uninstall and install modules using Powershell.\n\nI am too.\n\nBut, as always, don't hate the player, hate the game.") 
+    sys.exit()
 
-import random
+screen = pygame.display.set_mode((650, 700), RESIZABLE)
+pygame.display.set_caption("Grid")
+clock = pygame.time.Clock()
+cambria = pygame.font.SysFont("cambriamath", 11)
 
-def Main():
-    SimulationParameters = []
-    SimNo = input("Enter simulation number: ")
-    if SimNo == "1":
-        SimulationParameters = [1, 5, 5, 500, 3, 5, 1000, 50]
-    elif SimNo == "2":
-        SimulationParameters = [1, 5, 5, 500, 3, 5, 1000, 100]
-    elif SimNo == "3":
-        SimulationParameters = [1, 10, 10, 500, 3, 9, 1000, 25]
-    elif SimNo == "4":
-        SimulationParameters = [2, 10, 10, 500, 3, 6, 1000, 25] ###
-    ThisSimulation = Simulation(SimulationParameters)
-    Choice = ""
-    while Choice != "9":
-        DisplayMenu()
-        Choice = GetChoice()
-        if Choice == "1":
-            print(ThisSimulation.GetDetails())
-        elif Choice == "2":
-            StartRow = 0
-            StartColumn = 0
-            EndRow = 0
-            EndColumn = 0
-            StartRow, StartColumn = GetCellReference()
-            EndRow, EndColumn = GetCellReference()
-            print(ThisSimulation.GetAreaDetails(StartRow, StartColumn, EndRow, EndColumn))
-        elif Choice == "3":
-            Row = 0
-            Column = 0
-            Row, Column = GetCellReference()
-            print(ThisSimulation.GetCellDetails(Row, Column))
-        elif Choice == "4":
-            ThisSimulation.AdvanceStage(1)
-            print("Simulation moved on one stage\n")
-        elif Choice == "5":
-            NumberOfStages = int(input("Enter number of stages to advance by: "))
-            ThisSimulation.AdvanceStage(NumberOfStages)
-            print(f"Simulation moved on {NumberOfStages} stages" + "\n")
-        elif Choice == "6": #Removes food from all nests - Remove if needed
-            for N in ThisSimulation._Nests:
-                N.ChangeFood(-1000000)
-    input()
+TILE_WIDTH = 70
+TILE_HEIGHT = 70
+class ScreenCamera():
+    def __init__(self, x = 0, y = 0, zoom = 1):
+        self.x = x
+        self.y = y
+        self.zoom = zoom
 
-def DisplayMenu():
-    print()
-    print("1. Display overall details")
-    print("2. Display area details")
-    print("3. Inspect cell")
-    print("4. Advance one stage")
-    print("5. Advance X stages")
-    print("9. Quit")
-    print()
-    print("> ", end='')
+    def SetCoords(self, coords):
+        self.x = coords[0]
+        self.y = coords[1]
 
-def GetChoice():
-    Choice = input()
-    return Choice
-
-def GetCellReference():
-    print()
-    Row = int(input("Enter row number: "))
-    Column = int(input("Enter column number: "))
-    print()
-    return Row, Column
-
-## START OF CHANGE ~line 73
-
-class Simulation():
-    def __init__(self, SimulationParameters):
-        self._StartingNumberOfNests = SimulationParameters[0]
-        self._NumberOfRows = SimulationParameters[1]
-        self._NumberOfColumns = SimulationParameters[2]
-        self._StartingFoodInNest = SimulationParameters[3]
-        self._StartingNumberOfFoodCells = SimulationParameters[4]
-        self._StartingAntsInNest = SimulationParameters[5]
-        self._NewPheromoneStrength = 0 ##
-        self._KillPheremoneStrength = SimulationParameters[6] ##
-        self._PheromoneDecay = -SimulationParameters[7] ##
-        self._Nests = []
-        self._Ants = []
-        self._Pheromones = []
-        self._Grid = []
-
-## END OF CHANGE
+    def GetCoords(self):
+        return (self.x, self.y)
         
-        Row = 0
-        Column = 0
-        for Row in range(1, self._NumberOfRows + 1):
-            for Column in range(1, self._NumberOfColumns + 1):
-                self._Grid.append(Cell(Row, Column))
-        self.SetUpANestAt(2, 4)
-        for Count in range(2, self._StartingNumberOfNests + 1):
-            Allowed = False
-            while Allowed == False:
-                Allowed = True
-                Row = random.randint(1, self._NumberOfRows)
-                Column = random.randint(1, self._NumberOfColumns)
-                for N in self._Nests:
-                    if N.GetRow() == Row and N.GetColumn() == Column:
-                        Allowed = False
-            self.SetUpANestAt(Row, Column)
-        for Count in range(1, self._StartingNumberOfFoodCells + 1):
-            Row = 2
-            Column = 4
-            while Row == 2 and Column == 4:
-                Row = random.randint(1, self._NumberOfRows)
-                Column = random.randint(1, self._NumberOfColumns)
-            self.AddFoodToCell(Row, Column, 500)
-
-    def SetUpANestAt(self, Row, Column):
-        self._Nests.append(Nest(Row, Column, self._StartingFoodInNest))
-        self._Ants.append(QueenAnt(Row, Column, Row, Column))
-        for Worker in range(2, self._StartingAntsInNest + 1):
-            self._Ants.append(WorkerAnt(Row, Column, Row, Column))
-
-    def AddFoodToCell(self, Row, Column, Quantity):
-        self._Grid[self.__GetIndex(Row, Column)].UpdateFoodInCell(Quantity)
-
-    def __GetIndex(self, Row, Column):
-        return (Row - 1) * self._NumberOfColumns + Column - 1
-
-    def __GetIndicesOfNeighbours(self, Row, Column):
-        ListOfNeighbours = []
-        for RowDirection in [-1, 0, 1]:
-            for ColumnDirection in [-1, 0, 1]:
-                NeighbourRow = Row + RowDirection
-                NeighbourColumn = Column + ColumnDirection
-                if (RowDirection != 0 or ColumnDirection != 0) and NeighbourRow >= 1 and NeighbourRow <= self._NumberOfRows and NeighbourColumn >= 1 and NeighbourColumn <= self._NumberOfColumns:
-                    ListOfNeighbours.append(self.__GetIndex(NeighbourRow, NeighbourColumn))
-                else:
-                    ListOfNeighbours.append(-1)
-        return ListOfNeighbours
-
-    def __GetIndexOfNeighbourWithStrongestPheromone(self, Row, Column):
-        StrongestPheromone = 0
-        IndexOfStrongestPheromone = -1
-        for Index in self.__GetIndicesOfNeighbours(Row, Column):
-            if Index != -1 and self.GetStrongestPheromoneInCell(self._Grid[Index]) > StrongestPheromone:
-                IndexOfStrongestPheromone = Index
-                StrongestPheromone = self.GetStrongestPheromoneInCell(self._Grid[Index])
-        return IndexOfStrongestPheromone
-
-    def GetNestInCell(self, C):
-        for N in self._Nests:
-            if N.InSameLocation(C):
-                return N
-        return None
-
-    def UpdateAntsPheromoneInCell(self, A):
-        for P in self._Pheromones:
-            if P.InSameLocation(A) and P.GetBelongsTo() == A.GetID():
-                P.UpdateStrength(self._NewPheromoneStrength)
-                return
-        self._Pheromones.append(Pheromone(A.GetRow(), A.GetColumn(), A.GetID(), self._NewPheromoneStrength, self._PheromoneDecay))
-
-    def GetNumberOfAntsInCell(self, C):
-        Count = 0
-        for A in self._Ants:
-            if A.InSameLocation(C):
-                Count += 1
-        return Count
-
-    def GetNumberOfPheromonesInCell(self, C):
-        Count = 0
-        for P in self._Pheromones:
-            if P.InSameLocation(C):
-                Count += 1
-        return Count
-
-    def GetStrongestPheromoneInCell(self, C):
-        Strongest = 0
-        for P in self._Pheromones:
-            if P.InSameLocation(C):
-                if P.GetStrength() > Strongest:
-                    Strongest = P.GetStrength()
-        return Strongest
-
-    def GetDetails(self):
-        Details = ""
-        for Row in range(1, self._NumberOfRows + 1):
-            for Column in range(1, self._NumberOfColumns + 1):
-                Details += f"{Row}, {Column}: "
-                TempCell = self._Grid[self.__GetIndex(Row, Column)]
-                if self.GetNestInCell(TempCell) is not None:
-                    Details += "| Nest |  "
-                NumberOfAnts = self.GetNumberOfAntsInCell(TempCell)
-                if NumberOfAnts > 0:
-                    Details += f"| Ants: {NumberOfAnts} |  "
-                NumberOfPheromones = self.GetNumberOfPheromonesInCell(TempCell)
-                if NumberOfPheromones > 0:
-                    Details += f"| Pheromones: {NumberOfPheromones} |  "
-                AmountOfFood = TempCell.GetAmountOfFood()
-                if AmountOfFood > 0:
-                    Details += f"| {AmountOfFood} food |  "
-                Details += "\n"
-        return Details
-
-    def GetAreaDetails(self, StartRow, StartColumn, EndRow, EndColumn):
-        Details = ""
-        for Row in range(StartRow, EndRow + 1):
-            for Column in range(StartColumn, EndColumn + 1):
-                Details += f"{Row}, {Column}: "
-                TempCell = self._Grid[self.__GetIndex(Row, Column)]
-                if self.GetNestInCell(TempCell) is not None:
-                    Details += "| Nest |  "
-                NumberOfAnts = self.GetNumberOfAntsInCell(TempCell)
-                if NumberOfAnts > 0:
-                    Details += f"| Ants: {NumberOfAnts} |  "
-                NumberOfPheromones = self.GetNumberOfPheromonesInCell(TempCell)
-                if NumberOfPheromones > 0:
-                    Details += f"| Pheromones: {NumberOfPheromones} |  "
-                AmountOfFood = TempCell.GetAmountOfFood()
-                if AmountOfFood > 0:
-                    Details += f"| {AmountOfFood} food |  "
-                Details += "\n"
-        return Details
-
-    def AddFoodToNest(self, Food, Row, Column):
-        for N in self._Nests:
-            if N.GetRow() == Row and N.GetColumn() == Column:
-                N.ChangeFood(Food)
-                return
-
-    def GetCellDetails(self, Row, Column):
-        CurrentCell = self._Grid[self.__GetIndex(Row, Column)]
-        Details = CurrentCell.GetDetails()
-        N = self.GetNestInCell(CurrentCell)
-        if N is not None:
-            Details += f"Nest present ({N.GetFoodLevel()} food)" + "\n\n"
-        if self.GetNumberOfAntsInCell(CurrentCell) > 0:
-            Details += "ANTS\n"
-            for A in self._Ants:
-                if A.InSameLocation(CurrentCell):
-                    Details += A.GetDetails() + "\n"
-            Details += "\n\n"
-        if self.GetNumberOfPheromonesInCell(CurrentCell) > 0:
-            Details += "PHEROMONES\n"
-            for P in self._Pheromones:
-                if P.InSameLocation(CurrentCell):
-                    Details += f"Ant {P.GetBelongsTo()} with strength of {P.GetStrength()}" + "\n\n"
-            Details += "\n\n"
-        return Details
-
-## START OF CHANGE ~line 246
+    def Pan(self, dcoords):
+        self.x += dcoords[0]
+        self.y += dcoords[1]
     
-    def AdvanceStage(self, NumberOfStages):
-        for Count in range(1, NumberOfStages + 1):
-            PheromonesToDelete = []
-            for P in self._Pheromones:
-                P.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                if P.GetStrength() >= self._KillPheremoneStrength: ##
-                    PheromonesToDelete.append(P)
-            for P in PheromonesToDelete:
-                self._Pheromones.remove(P)
+    def Zoom(self, dZoom):
+        self.zoom *= dZoom
 
-## END OF CHANGE
+    def SetZoom(self, zoom):
+        self.zoom = zoom
+
+    def GetZoom(self):
+        return self.zoom
+        
+    def ToCameraCoords(self, coords):
+        return (coords[0] + self.x, coords[1] + self.y)
+    
+    def Offset(self, coords):
+        return list(map(math.ceil, Multiply(Subtract(coords, (self.x, self.y)), self.zoom)))
+
+    def ApplyZoom(self, NumberList):
+        return list(map(math.ceil, Multiply(NumberList, self.zoom)))
+    
+    def Blit(self, screen, surface, coords):
+        screen.blit(pygame.transform.scale_by(surface, self.zoom), self.Offset(coords))
+
+class Button():
+    buttons = []
+    def __init__(self, coords, text, colour=(200, 200, 200)):
+        self.coords = coords
+        self.text = text
+        self.colour = colour
+        self.clicked = False
+        Button.buttons.append(self)
+        
+
+    def Blit(self, screen):
+        margin = 10
+        rendered_text = cambria.render(self.text, True, "#ffffff" if self.clicked else "#000000")
+        pygame.draw.rect(screen, self.colour, (self.coords, (rendered_text.get_width() + 2 * margin, rendered_text.get_height() + 2 * margin)))
+        pygame.draw.rect(screen, AddScalar(self.colour, - 40), (self.coords, (rendered_text.get_width() + 2 * margin, rendered_text.get_height() + 2 * margin)), width=1)
+        screen.blit(rendered_text, AddScalar(self.coords, margin))
+        
+    def Render(screen):
+        for button in Button.buttons:
+            button.Blit(screen)
+
+    def Click():
+        self.clicked = not self.clicked
+def Add(List1, List2):
+    return [List1[i] + List2[i] for i in range(len(List1))]
+
+def AddScalar(List1, Scalar):
+    return [List1[i] + Scalar for i in range(len(List1))]
+
+def Subtract(List1, List2):
+    return [List1[i] - List2[i] for i in range(len(List1))]
+
+def Multiply(List1, Coefficient):
+    return [Coefficient * i for i in List1]
+
+def Divide(List1, Divisor):
+    return [i / Divisor for i in List1]
+
+def Negate(List1):
+    return Multiply(List1, -1)
+
+Camera = ScreenCamera()
+AdvanceOneStage = Button((0, 0), "Advance One Stage")
+running = True
+MouseCoords = []
+while running:
+    screen.fill("#000000")
+
+
+
+
+    if pygame.mouse.get_pressed()[0]:
+        if MouseCoords == []:
+            MouseCoords = pygame.mouse.get_pos()
+            CameraCoords = Camera.GetCoords()
+        Camera.SetCoords(Add(Divide(Subtract(MouseCoords, pygame.mouse.get_pos()), Camera.GetZoom()), CameraCoords))
+    else:
+        MouseCoords = []
+        
+
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+            pygame.quit()
+            sys.exit()
             
-            for A in self._Ants:
-                A.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-                CurrentCell = self._Grid[self.__GetIndex(A.GetRow(), A.GetColumn())]
-                if A.GetFoodCarried() > 0 and A.IsAtOwnNest():
-                    self.AddFoodToNest(A.GetFoodCarried(), A.GetRow(), A.GetColumn())
-                    A.UpdateFoodCarried(-A.GetFoodCarried())
-                elif CurrentCell.GetAmountOfFood() > 0 and A.GetFoodCarried() == 0:
-                    FoodObtained = CurrentCell.GetAmountOfFood() + 1
-                    while FoodObtained > CurrentCell.GetAmountOfFood() or (A.GetFoodCarried() + FoodObtained) > A.GetFoodCapacity():
-                        FoodObtained = random.randint(1, A.GetFoodCapacity())
-                    CurrentCell.UpdateFoodInCell(-FoodObtained)
-                    A.UpdateFoodCarried(FoodObtained)
-                else:
-                    if A.GetFoodCarried() > 0:
-                        self.UpdateAntsPheromoneInCell(A)
-                    A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
-            for N in self._Nests:
-                self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
-
-class Entity():
-    def __init__(self, StartRow, StartColumn):
-        self._Row = StartRow
-        self._Column = StartColumn
-        self._ID = None
-
-    def InSameLocation(self, E):
-        return E.GetRow() == self._Row and E.GetColumn() == self._Column
-
-    def GetRow(self):
-        return self._Row
-
-    def GetColumn(self):
-        return self._Column
-
-    def GetID(self):
-        return self._ID
-
-    def AdvanceStage(self, Nests, Ants, Pheromones):
-        pass
-
-    def GetDetails(self):
-        return ""
-
-class Cell(Entity):
-    def __init__(self, StartRow, StartColumn):
-        super().__init__(StartRow, StartColumn)
-        self._AmountOfFood = 0
-
-    def GetAmountOfFood(self):
-        return self._AmountOfFood
-
-    def GetDetails(self):
-        Details = f"{super().GetDetails()}{self._AmountOfFood} food present" + "\n\n"
-        return Details
-
-    def UpdateFoodInCell(self, Change):
-        self._AmountOfFood += Change
-
-class Ant(Entity):
-    _NextAntID = 1
-
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
-        super().__init__(StartRow, StartColumn)
-        self._NestRow = NestInRow
-        self._NestColumn = NestInColumn
-        self._ID = Ant._NextAntID
-        Ant._NextAntID += 1
-        self._Stages = 0
-        self._AmountOfFoodCarried = 0
-        self._FoodCapacity = 0
-        self._TypeOfAnt = ""
-
-    def GetFoodCapacity(self):
-        return self._FoodCapacity
-
-    def IsAtOwnNest(self):
-        return self._Row == self._NestRow and self._Column == self._NestColumn
-
-    def AdvanceStage(self, Nests, Ants, Pheromones):
-        self._Stages += 1
-
-    def GetDetails(self):
-        return f"{super().GetDetails()}  Ant {self._ID}, {self._TypeOfAnt}, stages alive: {self._Stages}"
-
-    def UpdateFoodCarried(self, Change):
-        self._AmountOfFoodCarried += Change
-
-    def _ChangeCell(self, NewCellIndicator, RowToChange, ColumnToChange):
-        if NewCellIndicator > 5:
-            RowToChange += 1
-        elif NewCellIndicator < 3:
-            RowToChange -= 1
-        if NewCellIndicator in [0, 3, 6]:
-            ColumnToChange -= 1
-        elif NewCellIndicator in [2, 5, 8]:
-            ColumnToChange += 1
-        return RowToChange, ColumnToChange
-
-    def _ChooseRandomNeighbour(self, ListOfNeighbours):
-        Chosen = False
-        while Chosen == False:
-            RNo = random.randint(0, len(ListOfNeighbours) - 1)
-            if ListOfNeighbours[RNo] != -1:
-                Chosen = True
-        return RNo
-
-    def ChooseCellToMoveTo(self, ListOfNeighbours, IndexOfNeighbourWithStrongestPheromone):
-        pass
-
-    def GetFoodCarried(self):
-        return self._AmountOfFoodCarried
-
-    def GetNestRow(self):
-        return self._NestRow
-
-    def GetNestColumn(self):
-        return self._NestColumn
-
-    def GetTypeOfAnt(self):
-        return self._TypeOfAnt
-
-class QueenAnt(Ant):
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
-        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn)
-        self._TypeOfAnt = "queen"
-
-class WorkerAnt(Ant):
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
-        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn)
-        self._TypeOfAnt = "worker"
-        self._FoodCapacity = 30
-
-    def GetDetails(self):
-        return f"{super().GetDetails()}, carrying {self._AmountOfFoodCarried} food, home nest is at {self._NestRow} {self._NestColumn}"
-
-    def ChooseCellToMoveTo(self, ListOfNeighbours, IndexOfNeighbourWithStrongestPheromone):
-        if self._AmountOfFoodCarried > 0:
-            if self._Row > self._NestRow:
-                self._Row -= 1
-            elif self._Row < self._NestRow:
-                self._Row += 1
-            if self._Column > self._NestColumn:
-                self._Column -= 1
-            elif self._Column < self._NestColumn:
-                self._Column += 1
-        elif IndexOfNeighbourWithStrongestPheromone == -1:
-            IndexToUse = self._ChooseRandomNeighbour(ListOfNeighbours)
-            self._Row, self._Column = self._ChangeCell(IndexToUse, self._Row, self._Column)
-        else:
-            IndexToUse = ListOfNeighbours.index(IndexOfNeighbourWithStrongestPheromone)
-            self._Row, self._Column = self._ChangeCell(IndexToUse, self._Row, self._Column)
-
-class Nest(Entity):
-    _NextNestID = 1
-
-    def __init__(self, StartRow, StartColumn, StartFood):
-        super().__init__(StartRow, StartColumn)
-        self._FoodLevel = StartFood
-        self._NumberOfQueens = 1
-        self._ID = Nest._NextNestID
-        Nest._NextNestID += 1
-
-    def ChangeFood(self, Change):
-        self._FoodLevel += Change
-        if self._FoodLevel < 0:
-            self._FoodLevel = 0
-
-    def GetFoodLevel(self):
-        return self._FoodLevel
-
-## START OF CHANGE ~line 421
-
-    def AdvanceStage(self, Nests, Ants, Pheromones):
-        if Ants is None:
-            return
-        AntsToCull = 0
-        Count = 0
-        for A in Ants:
-            if self.IsAntInNest(A):
-                if A.GetTypeOfAnt() == "queen":
-                    Count += 10
-                else:
-                    Count += 2
-        self.ChangeFood(-int(Count))
-        NestAnts = [A for A in Ants if self.IsAntInNest(A)]
-        if self._FoodLevel == 0 and len(NestAnts) > 0:
-            AntsToCull += 1
-        if self._FoodLevel < len(NestAnts): 
-            AntsToCull += 1
-        if self._FoodLevel < len(NestAnts) * 5:
-            AntsToCull += 1
-            if AntsToCull > len(NestAnts):
-                AntsToCull = len(NestAnts)
-            random.shuffle(Ants)
-            Pos = 0
-            while AntsToCull > 0 and len(Ants) > Pos:
-                if self.IsAntInNest(Ants[Pos]):
-                    if Ants[Pos].GetTypeOfAnt() == "queen":
-                        self._NumberOfQueens -= 1
-                    Ants.pop(Pos)
-                    AntsToCull -= 1
-                else:
-                    Pos += 1
-        else:
-            for A in range(1, self._NumberOfQueens + 1):
-                RNo1 = random.randint(0, 99)
-                if RNo1 < 50:
-                    RNo2 = random.randint(0, 99)
-                    if RNo2 < 2:
-                        Ants.append(QueenAnt(self._Row, self._Column, self._Row, self._Column))
-                    else:
-                        Ants.append(WorkerAnt(self._Row, self._Column, self._Row, self._Column))
-        return Nests, Ants, Pheromones
-
-    def IsAntInNest(self, Ant):
-        return (Ant.GetNestRow() == self._Row and Ant.GetNestColumn() == self._Column)
-        
-## END OF CHANGE
+        if event.type == pygame.MOUSEWHEEL:
+            TempZoom = Camera.GetZoom()
+            Camera.Zoom(1.1 ** event.y)
+            Camera.Pan(Subtract(Divide(pygame.mouse.get_pos(), TempZoom), Divide(pygame.mouse.get_pos(), Camera.GetZoom())))
+            
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_EQUALS:
+                TempZoom = Camera.GetZoom()
+                Camera.Zoom(1.1 ** 4)
+                Camera.Pan(Subtract(Divide((screen.get_width() / 2, screen.get_height() / 2), TempZoom), Divide((screen.get_width() / 2, screen.get_height() / 2), Camera.GetZoom())))
+            if event.key == pygame.K_MINUS:
+                TempZoom = Camera.GetZoom()
+                Camera.Zoom(1.1 ** -4)
+                Camera.Pan(Subtract(Divide((screen.get_width() / 2, screen.get_height() / 2), TempZoom), Divide((screen.get_width() / 2, screen.get_height() / 2), Camera.GetZoom())))
+##        print(Camera.GetCoords())
 
 
-class Pheromone(Entity):
-    def __init__(self, Row, Column, BelongsToAnt, InitialStrength, Decay):
-        super().__init__(Row, Column)
-        self._BelongsTo = BelongsToAnt
-        self._Strength = InitialStrength
-        self._PheromoneDecay = Decay
+    for i in range(10):
+        for j in range(10):
+            pygame.draw.rect(screen, f"#{(i + j) % 2 * 4}0bf{(i + j) % 2 * 4}0", [Camera.Offset((i * TILE_WIDTH, j * TILE_HEIGHT)), Camera.ApplyZoom((TILE_WIDTH, TILE_HEIGHT))])
+
     
-    def AdvanceStage(self, Nests, Ants, Pheromones):
-        self._Strength -= self._PheromoneDecay
-        if self._Strength > :
-            self._Strength = 0
+##    pygame.draw.rect(screen, "#00ae00", (Camera.Offset((0, 0)), (TILE_WIDTH * Camera.GetZoom(), TILE_HEIGHT * Camera.GetZoom())))
 
-    def UpdateStrength(self, Change):
-        self._Strength += Change
+    pygame.draw.circle(screen, "#ff0000", Camera.Offset((0, 0)), 20 * Camera.GetZoom())
 
-    def GetStrength(self):
-        return self._Strength
-
-    def GetBelongsTo(self):
-        return self._BelongsTo
-
-if __name__ == "__main__":
-    Main()
-
-
-
-
-
+##    pygame.draw.circle(screen, "#0000ff", (screen.get_width() / 2, screen.get_height() / 2), 1)
+    Button.Render(screen)
+    clock.tick(30)
+    pygame.display.flip()
