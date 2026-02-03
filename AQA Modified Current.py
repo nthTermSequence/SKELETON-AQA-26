@@ -122,7 +122,7 @@ class Simulation():
                     Column = random.randint(1, self._NumberOfColumns)
                 self.AddFoodToCell(Row, Column, 500)
         else:
-            self._StartingNumberOfNests = SimulationParameters[0]
+            self._StartingNumberOfNests = SimulationParameters[0][0]
             self._NumberOfRows = SimulationParameters[0][1]
             self._NumberOfColumns = SimulationParameters[0][2]
             self._StartingFoodInNest = SimulationParameters[0][3]
@@ -582,4 +582,5 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
