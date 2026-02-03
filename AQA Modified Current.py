@@ -20,13 +20,13 @@ def Main():
 ## START OF CHANGE ~line 19
         
     elif SimNo == "5":
-        SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 
+        SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 50], 
     ['', '', '', '', '',
      'Food(FoodLevel: 500)', 'Pheromone(BelongsToAnt: 2, Strength: 1000)', 'Pheromone(BelongsToAnt: 2, Strength: 950)', 'Pheromone(BelongsToAnt: 2, Strength: 900)', 'Nest(ID: 1, FoodLevel: 400), Ant(ID:2, BelongsToNest:1, FoodLevel: 20)',
      '', '', '', '', '',
      '', '', '', '', '',
-     '', '', '', '', '']])
-                                
+     '', '', '', '', ''])
+                                           
 ## END OF CHANGE
                                 
     ThisSimulation = Simulation(SimulationParameters)
@@ -582,3 +582,4 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
