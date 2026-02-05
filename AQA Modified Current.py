@@ -22,11 +22,11 @@ def Main():
     elif SimNo == "5":
         SimulationParameters = ([1, 5, 5, 500, 3, 5, 1000, 50], 
     ['', '', '', '', '',
-     'Food(FoodLevel: 500)', 'Pheromone(BelongsToAnt: 2, Strength: 1000)', 'Pheromone(BelongsToAnt: 2, Strength: 950)', 'Pheromone(BelongsToAnt: 2, Strength: 900)', 'Nest(ID: 1, FoodLevel: 400), Ant(ID:2, BelongsToNest:1, FoodLevel: 20)',
+     'Food(FoodLevel: 500), Pheromone(BelongsToAnt: 1, Strength: 1000)', 'Pheromone(BelongsToAnt: 1, Strength: 950)', 'Pheromone(BelongsToAnt: 1, Strength: 900)', 'Pheromone(BelongsToAnt: 1, Strength: 850)', 'Nest(ID: 1, FoodLevel: 400), Ant(ID:1, BelongsToNest:1, FoodLevel: 20)',
      '', '', '', '', '',
      '', '', '', '', '',
      '', '', '', '', ''])
-                                           
+                               
 ## END OF CHANGE
                                 
     ThisSimulation = Simulation(SimulationParameters)
@@ -84,7 +84,7 @@ class Simulation():
     def __init__(self, SimulationParameters):
 
 ## START OF CHANGE ~line 86
-
+        
         if type(SimulationParameters) == list:
             self._StartingNumberOfNests = SimulationParameters[0]
             self._NumberOfRows = SimulationParameters[1]
@@ -170,7 +170,7 @@ class Simulation():
                                 AntNest = (NestEntity[1]["Row"], NestEntity[1]["Column"])
                                 break
                         if AntNest:
-                            NewAnt = WorkerAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1])
+                            NewAnt = WorkerAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1], NewEntity[1]["ID"])
                             NewAnt.UpdateFoodCarried(NewEntity[1]["FoodLevel"])
                             self._Ants.append(NewAnt)
                         else:
@@ -183,28 +183,25 @@ class Simulation():
                                 AntNest = (NestEntity[1]["Row"], NestEntity[1]["Column"])
                                 break
                         if AntNest:
-                            NewAnt = QueenAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1])
+                            NewAnt = QueenAnt(NewEntity[1]["Row"], NewEntity[1]["Column"], AntNest[0], AntNest[1], NewEntity[1]["ID"])
                             self._Ants.append(NewAnt)
                         else:
                             raise ReferenceError(f"QueenAnt at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Nest")
  
                     case "Nest":
-                        self._Nests.append(Nest(NewEntity[1]["Row"], NewEntity[1]["Column"], NewEntity[1]["FoodLevel"]))
- 
+                        NestQueens = 0
+                        for AntEntity in Entities:
+                            if AntEntity[0] == "Queen" and NewEntity[1]["ID"] == AntEntity[1]["BelongsToNest"]:
+                                NestQueens += 1
+                        NewNest = Nest(NewEntity[1]["Row"], NewEntity[1]["Column"], NewEntity[1]["FoodLevel"], NestQueens, NewEntity[1]["ID"])
+                        self._Nests.append(NewNest)
+
                     case "Food":
                         self._Grid[self.__GetIndex(NewEntity[1]["Row"], NewEntity[1]["Column"])].UpdateFoodInCell(NewEntity[1]["FoodLevel"])
 
                     case "Pheromone":
-                        PheromoneAnt = None
-                        for AntEntity in Entities:
-                            if AntEntity[0] == "Ant" and AntEntity[1]["ID"] == NewEntity[1]["BelongsToAnt"]:
-                                PheromoneAnt = AntEntity[1]["ID"]
-                                break
-                        if PheromoneAnt:
-                            self._Pheromones.append(Pheromone(NewEntity[1]["Row"], NewEntity[1]["Column"], PheromoneAnt, NewEntity[1]["Strength"], self._PheromoneDecay))
-                        else:
-                            raise ReferenceError(f"Pheromone at {NewEntity[1]['Row'], NewEntity[1]['Column']} has no corresponding Ant")
-
+                        self._Pheromones.append(Pheromone(NewEntity[1]["Row"], NewEntity[1]["Column"], NewEntity[1]["BelongsToAnt"], NewEntity[1]["Strength"], self._PheromoneDecay))
+                        
     def __GetRowColumn(self, Index):
         return (Index // self._NumberOfRows + 1, Index % self._NumberOfColumns + 1)
 
@@ -413,13 +410,22 @@ class Cell(Entity):
 
 class Ant(Entity):
     _NextAntID = 1
-
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
+    
+## START OF CHANGE ~ line 312
+   
+    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn, ID = None):
         super().__init__(StartRow, StartColumn)
         self._NestRow = NestInRow
         self._NestColumn = NestInColumn
-        self._ID = Ant._NextAntID
-        Ant._NextAntID += 1
+        if ID:
+            self._ID = ID
+            Ant._NextAntID = max(Ant._NextAntID, ID + 1)
+        else:
+            self._ID = Ant._NextAntID
+            Ant._NextAntID += 1
+		
+## END OF CHANGE
+	    
         self._Stages = 0
         self._AmountOfFoodCarried = 0
         self._FoodCapacity = 0
@@ -475,13 +481,24 @@ class Ant(Entity):
         return self._TypeOfAnt
 
 class QueenAnt(Ant):
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
-        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn)
+	
+## START OF CHANGE ~line 372
+	
+    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn, ID = None):
+        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn, ID)
         self._TypeOfAnt = "queen"
-
+        
+## END OF CHANGE
+        
 class WorkerAnt(Ant):
-    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
-        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn)
+
+## START OF CHANGE ~line 377
+	
+    def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn, ID = None):
+        super().__init__(StartRow, StartColumn, NestInRow, NestInColumn, ID)
+        
+## END OF CHANGE
+        
         self._TypeOfAnt = "worker"
         self._FoodCapacity = 30
 
@@ -508,12 +525,20 @@ class WorkerAnt(Ant):
 class Nest(Entity):
     _NextNestID = 1
 
-    def __init__(self, StartRow, StartColumn, StartFood):
+## START OF CHANGE ~line 406
+
+    def __init__(self, StartRow, StartColumn, StartFood, NumberOfQueens = 1, ID = None):
         super().__init__(StartRow, StartColumn)
         self._FoodLevel = StartFood
-        self._NumberOfQueens = 1
-        self._ID = Nest._NextNestID
-        Nest._NextNestID += 1
+        self._NumberOfQueens = NumberOfQueens
+        if ID:
+            self._ID = ID
+            Nest._NextNestID = max(Nest._NextNestID, ID + 1)
+        else:
+            self._ID = Nest._NextNestID
+            Nest._NextNestID += 1
+
+## END OF CHANGE
 
     def ChangeFood(self, Change):
         self._FoodLevel += Change
@@ -582,5 +607,3 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
-
-
