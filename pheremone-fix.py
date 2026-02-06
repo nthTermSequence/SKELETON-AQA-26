@@ -172,7 +172,7 @@ class Simulation():
         Row = (Index - Column + 1) / self._NumberOfColumns + 1
         return (int(Row), int(Column))
 
-    def _ChebyshevDistance(a, b): ## takes values in as a tuple (x, y) or some such
+    def _ChebyshevDistance(self, a, b): ## takes values in as a tuple (x, y) or some such
         return max(abs(b[0] - a[0]), abs(b[1] - a[1]))
 
 ## END OF CHANGE
@@ -533,6 +533,7 @@ class Pheromone(Entity):
 
 if __name__ == "__main__":
     Main()
+
 
 
 
