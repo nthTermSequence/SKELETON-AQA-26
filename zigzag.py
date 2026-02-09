@@ -50,6 +50,9 @@ def Main():
             if End:
                 print(f"The simulation ended because {' and '.join(End)}.")
                 break
+        elif Choice == "6":
+            Row, Column = GetCellReference(SimulationParameters[1], SimulationParameters[2])
+            ThisSimulation.InfectAntsInCell(Row, Column)
         elif Choice == "9" and input("Are you sure you want to quit? (y/n)\n").lower() == "n":
             Choice = 0
     print("Simulation complete")
@@ -62,13 +65,14 @@ def DisplayMenu():
     print("3. Inspect cell")
     print("4. Advance one stage")
     print("5. Advance X stages")
+    print("6. Infect")
     print("9. Quit")
     print()
     print("> ", end='')
 
 def GetChoice():
     Choice = input()
-    while not Choice.isdecimal() or not (1 <= int(Choice) <= 5 or Choice == "9"):
+    while not Choice.isdecimal() or not (1 <= int(Choice) <= 6 or Choice == "9"):
         if not Choice.isdecimal():
             print("Not valid format.")
         else:
@@ -314,7 +318,9 @@ class Simulation():
                 else:
                     if A.GetFoodCarried() > 0:
                         self.UpdateAntsPheromoneInCell(A)
-                    A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
+                    if A.GetContagion() == 0:
+                        A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
+                    
             for N in self._Nests:
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
             if self.HasSimulationEnded():
@@ -357,6 +363,14 @@ class Simulation():
 
         Reasons.append("the food ran out")
         return Reasons
+
+    def InfectAntsInCell(self, Row, Column):
+        AntTotal = 0
+        for A in self._Ants:
+            if A.GetRow() == Row and A.GetColumn() == Column:
+                AntTotal += A.Infect()
+        print(f"{AntTotal} ant{['s', ''][AntTotal == 1]} infected. Good job soldier.")
+            
 class Entity():
     def __init__(self, StartRow, StartColumn):
         self._Row = StartRow
@@ -409,6 +423,7 @@ class Ant(Entity):
         self._AmountOfFoodCarried = 0
         self._FoodCapacity = 0
         self._TypeOfAnt = ""
+        self._Contagion = 0
 
     def GetFoodCapacity(self):
         return self._FoodCapacity
@@ -418,9 +433,11 @@ class Ant(Entity):
 
     def AdvanceStage(self, Nests, Ants, Pheromones):
         self._Stages += 1
+        if self._Contagion > 0:
+            self.Infect()
 
     def GetDetails(self):
-        return f"{super().GetDetails()}  Ant {self._ID}, {self._TypeOfAnt}, stages alive: {self._Stages}"
+        return f"{super().GetDetails()}  Ant {self._ID}, {self._TypeOfAnt}, stages alive: {self._Stages}, contagion: {self._Contagion}"
 
     def UpdateFoodCarried(self, Change):
         self._AmountOfFoodCarried += Change
@@ -461,6 +478,15 @@ class Ant(Entity):
 
     def GetStages(self):
         return self._Stages
+
+    def Infect(self):
+        if self._TypeOfAnt != "queen":
+            self._Contagion += 1
+            return 1
+        return 0
+
+    def GetContagion(self):
+        return self._Contagion
 
 class QueenAnt(Ant):
     def __init__(self, StartRow, StartColumn, NestInRow, NestInColumn):
@@ -551,6 +577,18 @@ class Nest(Entity):
                 OldAnts.append(A)
         for A in OldAnts:
             Ants.remove(A)
+
+        InfectedAnts = []
+        for A in Ants:
+            if A.GetContagion() >= 11:
+                InfectedAnts.append(A)
+
+        if len(InfectedAnts) > 0:
+            print(f"Unfortunately, {len(InfectedAnts)} {['ants have', 'ant has'][len(InfectedAnts) == 1]} passed away during the night. They were surrounded by their family until the very end.") 
+
+        for A in InfectedAnts:
+            Ants.remove(A)
+            
         return Nests, Ants, Pheromones
 
 class Pheromone(Entity):
