@@ -51,8 +51,15 @@ def Main():
                 print(f"The simulation ended because {' and '.join(End)}.")
                 break
         elif Choice == "6":
+            StartRow, StartColumn = GetCellReference(SimulationParameters[1], SimulationParameters[2])
+            EndRow, EndColumn = GetCellReference(SimulationParameters[1], SimulationParameters[2])
+            print(ThisSimulation.RelocateAnt(StartRow, StartColumn, EndRow, EndColumn))
+        elif Choice == "7":
             Row, Column = GetCellReference(SimulationParameters[1], SimulationParameters[2])
             ThisSimulation.InfectAntsInCell(Row, Column)
+        elif Choice == "8":
+            Row, Column = GetCellReference(SimulationParameters[1], SimulationParameters[2])
+            ThisSimulation.RemovePheromonesFromCell(Row, Column)
         elif Choice == "9" and input("Are you sure you want to quit? (y/n)\n").lower() == "n":
             Choice = 0
     print("Simulation complete")
@@ -65,14 +72,16 @@ def DisplayMenu():
     print("3. Inspect cell")
     print("4. Advance one stage")
     print("5. Advance X stages")
-    print("6. Infect")
+    print("6. Relocate")
+    print("7. Infect")
+    print("8. Season with Cinnamon")
     print("9. Quit")
     print()
     print("> ", end='')
 
 def GetChoice():
     Choice = input()
-    while not Choice.isdecimal() or not (1 <= int(Choice) <= 6 or Choice == "9"):
+    while not Choice.isdecimal() or not (1 <= int(Choice) <= 10 or Choice == "9"):
         if not Choice.isdecimal():
             print("Not valid format.")
         else:
@@ -316,7 +325,7 @@ class Simulation():
                     CurrentCell.UpdateFoodInCell(-FoodObtained)
                     A.UpdateFoodCarried(FoodObtained)
                 else:
-                    if A.GetFoodCarried() > 0:
+                    if A.GetFoodCarried() > 0 and not self._Grid[self.__GetIndex(A.GetRow(), A.GetColumn())].GetCinnamon():
                         self.UpdateAntsPheromoneInCell(A)
                     if A.GetContagion() == 0:
                         A.ChooseCellToMoveTo(self.__GetIndicesOfNeighbours(A.GetRow(), A.GetColumn()), self.__GetIndexOfNeighbourWithStrongestPheromone(A.GetRow(), A.GetColumn()))
@@ -370,6 +379,33 @@ class Simulation():
             if A.GetRow() == Row and A.GetColumn() == Column:
                 AntTotal += A.Infect()
         print(f"{AntTotal} ant{['s', ''][AntTotal == 1]} infected. Good job soldier.")
+
+    def RelocateAnt(self, StartRow, StartColumn, EndRow, EndColumn):
+        AntsInCell = []
+        for A in self._Ants:
+            if A.GetRow() == StartRow and A.GetColumn() == StartColumn and A.GetTypeOfAnt() != "queen":
+                AntsInCell.append(A)
+        if len(AntsInCell) == 0:
+            return "No ants found in starting cell."
+        elif len(AntsInCell) == 1:
+            AntToMove = AntsInCell[0]
+        else:
+            AntToMove = int(input(f"Which ant do you want to select? {', '.join(map(lambda x: str(x.GetID()), AntsInCell))}? "))
+            for A in AntsInCell:
+                if A.GetID() == AntToMove:
+                    AntToMove = A
+                    break
+        AntToMove.SetNewLocation(EndRow, EndColumn)
+        return f"Moved Ant {AntToMove.GetID()} to ({EndRow, EndColumn})"
+
+    def RemovePheromonesFromCell(self, Row, Column):
+        self._Grid[self.__GetIndex(Row, Column)].AddCinnamon()
+        PheromonesToDelete = []
+        for P in self._Pheromones:
+            if P.GetRow() == Row and P.GetColumn() == Column:
+                PheromonesToDelete.append(P)
+        for P in PheromonesToDelete:
+            self._Pheromones.remove(P)
             
 class Entity():
     def __init__(self, StartRow, StartColumn):
@@ -399,6 +435,7 @@ class Cell(Entity):
     def __init__(self, StartRow, StartColumn):
         super().__init__(StartRow, StartColumn)
         self._AmountOfFood = 0
+        self._Cinnamon = False
 
     def GetAmountOfFood(self):
         return self._AmountOfFood
@@ -410,6 +447,12 @@ class Cell(Entity):
     def UpdateFoodInCell(self, Change):
         self._AmountOfFood += Change
 
+    def AddCinnamon(self):
+        self._Cinnamon = True
+
+    def GetCinnamon(self):
+        return self._Cinnamon
+        
 class Ant(Entity):
     _NextAntID = 1
 
@@ -479,6 +522,9 @@ class Ant(Entity):
     def GetStages(self):
         return self._Stages
 
+    def SetNewLocation(self, Row, Column):
+        pass
+
     def Infect(self):
         if self._TypeOfAnt != "queen":
             self._Contagion += 1
@@ -519,6 +565,10 @@ class WorkerAnt(Ant):
             IndexToUse = ListOfNeighbours.index(IndexOfNeighbourWithStrongestPheromone)
             self._Row, self._Column = self._ChangeCell(IndexToUse, self._Row, self._Column)
 
+    def SetNewLocation(self, Row, Column):
+        self._Row = Row
+        self._Column = Column
+        
 class Nest(Entity):
     _NextNestID = 1
 
