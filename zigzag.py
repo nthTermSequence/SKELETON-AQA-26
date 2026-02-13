@@ -59,7 +59,7 @@ def Main():
             ThisSimulation.InfectAntsInCell(Row, Column)
         elif Choice == "8":
             Row, Column = GetCellReference(SimulationParameters[1], SimulationParameters[2])
-            ThisSimulation.RemovePheromonesFromCell(Row, Column)
+            print(ThisSimulation.RemovePheromonesFromCell(Row, Column))
         elif Choice == "9" and input("Are you sure you want to quit? (y/n)\n").lower() == "n":
             Choice = 0
     print("Simulation complete")
@@ -73,8 +73,13 @@ def DisplayMenu():
     print("4. Advance one stage")
     print("5. Advance X stages")
     print("6. Relocate")
-    print("7. Infect")
-    print("8. Season with Cinnamon")
+    print("7. Display Food Delivery Stats")
+    print("8. Place a Predator")
+    print("10. Get Colony Summary")
+    print("11. Display Pheromone Heat Map")
+    print("12. Infect")
+    print("13. Get Danger Pheromone Locations")
+    print("14. Season with Cinnamon")
     print("9. Quit")
     print()
     print("> ", end='')
@@ -142,6 +147,7 @@ class Simulation():
         self._Ants = []
         self._Pheromones = []
         self._Grid = []
+        self._DeliveryData = {}
         Row = 0
         Column = 0
         for Row in range(1, self._NumberOfRows + 1):
@@ -171,6 +177,7 @@ class Simulation():
         self._Ants.append(QueenAnt(Row, Column, Row, Column))
         for Worker in range(2, self._StartingAntsInNest + 1):
             self._Ants.append(WorkerAnt(Row, Column, Row, Column))
+            self._DeliveryData[self._Ants[-1].GetID()] = self._Ants[-1].GetFoodCarried()
 
     def AddFoodToCell(self, Row, Column, Quantity):
         self._Grid[self.__GetIndex(Row, Column)].UpdateFoodInCell(Quantity)
@@ -251,7 +258,7 @@ class Simulation():
                 AmountOfFood = TempCell.GetAmountOfFood()
                 if AmountOfFood > 0:
                     Details += f"| {AmountOfFood} food |  "
-                Details += "\n"
+            Details += "\n"
         return Details
 
     def GetAreaDetails(self, StartRow, StartColumn, EndRow, EndColumn):
@@ -334,6 +341,7 @@ class Simulation():
                 self._Nests, self._Ants, self._Pheromones = N.AdvanceStage(self._Nests, self._Ants, self._Pheromones)
             if self.HasSimulationEnded():
                 return self.GetEndReason()
+            print(locals())
 
     def HasSimulationEnded(self):
         if len(self._Ants) == 0:
@@ -396,7 +404,7 @@ class Simulation():
                     AntToMove = A
                     break
         AntToMove.SetNewLocation(EndRow, EndColumn)
-        return f"Moved Ant {AntToMove.GetID()} to ({EndRow, EndColumn})"
+        return f"Moved Ant {AntToMove.GetID()} to {EndRow, EndColumn}"
 
     def RemovePheromonesFromCell(self, Row, Column):
         self._Grid[self.__GetIndex(Row, Column)].AddCinnamon()
@@ -406,6 +414,7 @@ class Simulation():
                 PheromonesToDelete.append(P)
         for P in PheromonesToDelete:
             self._Pheromones.remove(P)
+        return f"Cinnamon successfully added to {Row, Column}."
             
 class Entity():
     def __init__(self, StartRow, StartColumn):
@@ -441,7 +450,7 @@ class Cell(Entity):
         return self._AmountOfFood
 
     def GetDetails(self):
-        Details = f"{super().GetDetails()}{self._AmountOfFood} food present" + "\n\n"
+        Details = f"{super().GetDetails()}{self._AmountOfFood} food present\n{['No Cinnamnon present', 'Cinnamon present'][self._Cinnamon]}" + "\n\n"
         return Details
 
     def UpdateFoodInCell(self, Change):
@@ -452,7 +461,7 @@ class Cell(Entity):
 
     def GetCinnamon(self):
         return self._Cinnamon
-        
+
 class Ant(Entity):
     _NextAntID = 1
 
